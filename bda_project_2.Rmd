@@ -1,0 +1,52 @@
+---
+title: "bda_project_2"
+output: pdf_document
+---
+
+## Load Packages
+
+1. install.packages("hashmap")
+
+
+```{r}
+testdata <- read.csv(file="data/Kemi.csv", header=TRUE, sep=",")
+
+df1<- data.frame(c(testdata[1]), c(testdata[6]))
+
+y <- aggregate(x = df1$Water.level..mm.,
+          by = list(df1$Year),
+          FUN = mean) 
+print(y)
+
+plot(y[,1], y[,2])
+
+```
+
+```{r}
+library(hashmap)
+```
+
+```{r}
+data_Helsinki <- read.csv(file="data/Helsinki.csv", header=TRUE, sep=",")
+
+water_level_values = hashmap()
+
+for (i in 1:10){
+  temp_d = (data_Helsinki[i,]);
+  
+  if (H$has_key(temp_d[,1])){
+    water_level_values[[temp_d[,1]]] = c(water_level_values[[temp_d[,1]]], temp_d[,6]);
+  }
+  else{
+    water_level_values[[temp_d[,1]]] = temp_d[,6];
+  }
+}
+
+print(water_level_values$items())
+
+#for(data in data_Helsinki){
+#  print(data)
+#}
+  
+
+```

@@ -1,0 +1,77 @@
+---
+title: "Finnish_Water_Level"
+output: pdf_document
+---
+
+```{r warning=FALSE, message=FALSE}
+library(rstan)
+```
+
+# Finnish Water Rise : Kemi
+
+## Pre-processing
+
+The pre-processing script is in Python which can be found in "../src/preprocessing.py" path.
+
+## Setting all the paths
+
+```{r}
+preprocessed_data_path = "../data/Kemi_yearly_means.csv"
+separate_stan_model = "../model/separate.stan"
+```
+
+## Loading data once it has been pre_processed
+
+```{r}
+preprocessed_data = read.csv(preprocessed_data_path,header=FALSE)
+
+print("Data Loaded successfully")
+
+```
+
+## Plotting the data
+
+```{r}
+plot(preprocessed_data)
+```
+
+
+## Preparing data for Stan model
+
+```{r}
+kemi_data = list(
+    'N'= length(preprocessed_data[,1]),
+    'x'= preprocessed_data[,1],
+    'y'= preprocessed_data[,2]
+)
+
+print(kemi_data)
+```
+
+## Separate Stan Model
+
+```{r}
+fit = stan(separate_stan_model, data=kemi_data)
+```
+
+## Evaluation
+
+```{r}
+fit_data = extract(fit, permuted=T)
+print(fit)
+```
+
+```{r}
+hist(fit_data$y_rep,50)
+```
+
+
+```{r}
+loo_data = loo(fit)
+print(loo_data)
+```
+
+
+```{r}
+plot(loo_data)
+```

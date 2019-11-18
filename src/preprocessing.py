@@ -3,7 +3,7 @@ import os.path
 import pandas as pd
 
 
-def process_data(data_path, mean_sea_level_path, output_file_path):
+def process_data(data_path, mean_sea_level_path, output_file_path, yearly_means_output_path):
     print(f"Pre-processing file: {data_path}")
 
     data = pd.read_csv(data_path)
@@ -35,17 +35,21 @@ def process_data(data_path, mean_sea_level_path, output_file_path):
     # finding the mean value of each year
     yearly_means = n_data["water_level"].groupby(n_data["Year"]).mean().dropna()
 
-    with open("../data/Kemi_yearly_means.csv", "w") as f:
+    with open(yearly_means_output_path, "w") as f:
         f.writelines(pd.Series.to_csv(yearly_means))
 
     return yearly_means
 
 
 if __name__ == '__main__':
-    kemi_data_path = r"../data/Kemi.csv"
-    kemi_mean_sea_level_path = r"../data/kemi_mw_n2000.csv"
-    kemi_normalized_output_path = r"../data/Kemi_normalized.csv"
+    data_path = r"../data/Kemi/Kemi.csv"
+    mean_sea_level_path = r"../data/Kemi/Kemi_mw_n2000.csv"
+    normalized_output_path = r"../data/Kemi/Kemi_normalized.csv"
+    yearly_means_output_path = r"../data/Kemi/Kemi_yearly_means.csv"
 
-    yearly_mean = process_data(kemi_data_path, kemi_mean_sea_level_path, kemi_normalized_output_path)
+    yearly_mean = process_data(data_path, mean_sea_level_path, normalized_output_path, yearly_means_output_path)
 
     print(yearly_mean)
+
+
+from torchvision.models import vgg16

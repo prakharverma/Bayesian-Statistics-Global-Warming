@@ -11,67 +11,129 @@ library(rstan)
 
 ## Pre-processing
 
+#### Details:
+
+When talking about sea level it is essential to know in which height system the values are given. In other words, to what level the zero of the scale of measurement has been set. There are many options for this and below are the ones that are most used in Finland. Annual theoretical mean sea level values on the Finnish coast referenced to the geodetic height systems (N2000, N60, N43 and NN) are given in the tables below.
+
+https://en.ilmatieteenlaitos.fi/theoretical-mean-sea-level
+
 The pre-processing script is in Python which can be found in "../src/preprocessing.py" path.
 
 ## Setting all the paths
 
 ```{r}
-preprocessed_data_path = "../data/Kemi_yearly_means.csv"
+main_data_dir = "../data"
 separate_stan_model = "../model/separate.stan"
+hierarchical_stan_model = "../model/hierarchical.stan"
 ```
 
 ## Loading data once it has been pre_processed
 
 ```{r}
-preprocessed_data = read.csv(preprocessed_data_path,header=FALSE)
+
+combineListsAsOne <-function(list1, list2){
+  n <- c()
+  for(x in list1){
+    n<-c(n, x)
+  }
+  for(y in list2){
+    n<-c(n, y)
+  }
+  return(n)
+}
+
+
+number_of_cities = 0
+x = list()
+y = list()
+i = list()
+
+for (data_file in list.files(main_data_dir, pattern="*_yearly_means.csv", full.names=TRUE, recursive = TRUE)){
+  preprocessed_data = read.csv(data_file, header=FALSE)
+  
+  x = combineListsAsOne(x, preprocessed_data[,1])
+  y = combineListsAsOne(y, preprocessed_data[,2])
+  number_of_cities = number_of_cities + 1
+  
+  # FIXME
+  for (j in seq(preprocessed_data[,1])){
+    i = combineListsAsOne(i, number_of_cities)
+  }
+}
 
 print("Data Loaded successfully")
-
 ```
 
 ## Plotting the data
 
 ```{r}
-plot(preprocessed_data)
+plot(x,y)
 ```
-
 
 ## Preparing data for Stan model
 
 ```{r}
-kemi_data = list(
-    'N'= length(preprocessed_data[,1]),
-    'x'= preprocessed_data[,1],
-    'y'= preprocessed_data[,2]
+data = list(
+    'N'= length(x),
+    'x'= x,
+    'y'= y,
+    'k' = number_of_cities,
+    'i' = i
 )
 
-print(kemi_data)
+print("Data ready for Stan model")
+print(data)
 ```
 
 ## Separate Stan Model
 
 ```{r}
-fit = stan(separate_stan_model, data=kemi_data)
+fit_separate = stan(separate_stan_model, data=data)
 ```
 
 ## Evaluation
 
 ```{r}
-fit_data = extract(fit, permuted=T)
-print(fit)
+fit_separate_data = extract(fit_separate, permuted=T)
+print(fit_separate_data)
 ```
 
 ```{r}
-hist(fit_data$y_rep,50)
-```
-
-
-```{r}
-loo_data = loo(fit)
-print(loo_data)
+hist(fit_separate_data$y_rep,50)
 ```
 
 
 ```{r}
-plot(loo_data)
+loo_separate_data = loo(fit_separate)
+print(loo_separate_data)
+```
+
+
+```{r}
+plot(loo_separate_data)
+```
+
+# Hierarchical Stan Model
+
+```{r}
+fit_hierarchical = stan(hierarchical_stan_model, data=data)
+```
+
+## Evaluation
+
+```{r}
+fit_hierarchical_data = extract(fit_hierarchical, permuted=T)
+print(fit_hierarchical_data)
+```
+
+
+
+## Loo
+```{r}
+loo_hierarchical_data = loo(fit_hierarchical)
+print(loo_hierarchical_data)
+```
+
+```{r}
+plot(loo_hierarchical_data)
 ```

@@ -82,7 +82,7 @@ data = list(
 )
 
 print("Data ready for Stan model")
-print(data)
+#print(data)
 ```
 
 ## Separate Stan Model
@@ -94,8 +94,8 @@ fit_separate = stan(separate_stan_model, data=data)
 ## Evaluation
 
 ```{r}
-fit_separate_data = extract(fit_separate, permuted=T)
-print(fit_separate_data)
+fit_separate_data<- extract(fit_separate, permuted=T)
+print(fit_separate)
 ```
 
 ```{r}
@@ -123,7 +123,7 @@ fit_hierarchical = stan(hierarchical_stan_model, data=data)
 
 ```{r}
 fit_hierarchical_data = extract(fit_hierarchical, permuted=T)
-print(fit_hierarchical_data)
+print(fit_hierarchical)
 ```
 
 

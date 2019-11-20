@@ -5,6 +5,9 @@ output: pdf_document
 
 ```{r warning=FALSE, message=FALSE}
 library(rstan)
+library(ggplot2)
+library(dplyr)
+library(bayesplot)
 ```
 
 # Finnish Water Rise : Kemi
@@ -46,18 +49,23 @@ combineListsAsOne <-function(list1, list2){
 number_of_cities = 0
 x = list()
 y = list()
-i = list()
+ii = list()
+city_names = list()
 
 for (data_file in list.files(main_data_dir, pattern="*_yearly_means.csv", full.names=TRUE, recursive = TRUE)){
   preprocessed_data = read.csv(data_file, header=FALSE)
   
+  #FIXME : Hard Coding
+  c_name = strsplit(strsplit(data_file, "/")[[1]][4],"_")[[1]][1]
+  city_names[number_of_cities + 1] = c_name
+    
   x = combineListsAsOne(x, preprocessed_data[,1])
   y = combineListsAsOne(y, preprocessed_data[,2])
   number_of_cities = number_of_cities + 1
   
   # FIXME
   for (j in seq(preprocessed_data[,1])){
-    i = combineListsAsOne(i, number_of_cities)
+    ii = combineListsAsOne(ii, number_of_cities)
   }
 }
 
@@ -67,7 +75,26 @@ print("Data Loaded successfully")
 ## Plotting the data
 
 ```{r}
-plot(x,y)
+data_plot = list(
+    'N'= 49,
+    'x'= x[1:49],
+    'y'= y[1:49],
+    'k' = number_of_cities
+)
+
+for (i in seq(1:number_of_cities)){
+  x_temp = x
+  y_temp = y
+  
+  a = ((i-1)*49) +1
+  b = i*49
+  
+  print(ggplot() +
+    geom_point(aes(x_temp[a:b], y_temp[a:b]), data = data.frame(data_plot), size = 1) +
+    labs(y = 'Water level', x= "Year", title = city_names[i]) +
+    guides(linetype = F))
+}
+
 ```
 
 ## Preparing data for Stan model
@@ -78,7 +105,7 @@ data = list(
     'x'= x,
     'y'= y,
     'k' = number_of_cities,
-    'i' = i
+    'i' = ii
 )
 
 print("Data ready for Stan model")
@@ -95,7 +122,34 @@ fit_separate = stan(separate_stan_model, data=data)
 
 ```{r}
 fit_separate_data = extract(fit_separate, permuted=T)
-print(fit_separate_data)
+print(fit_separate)
+```
+
+```
+for (i in seq(1:number_of_cities)){
+  x_temp = x
+  y_temp = y
+  
+  a = ((i-1)*49) +1
+  b = i*49
+  
+  mean_alpha = mean(fit_separate_data$alpha[,i])
+  mean_beta = mean(fit_separate_data$beta[,i])
+  mu = fit_separate_data$alpha[,i] + (x_temp[a:b] * fit_separate_data$beta[,i])
+  
+  
+  mu <- apply(mu, 2, quantile, c(0.05, 0.5, 0.95)) %>%
+  t() %>% data.frame(x = data_plot$x, .)  %>% gather(pct, y_temp[a:b], -x_temp[a:b])
+  
+  print(
+    ggplot() +
+    geom_point(aes(x_temp[a:b], y_temp[a:b]), data=data.frame(data_plot), size = 1) +
+    geom_line(aes(x_temp[a:b], y_temp[a:b], linetype=pct), data = data.frame(mu), color = 'red') +
+    labs(y = 'Water Level', x= "Year") +
+    guides(linetype = F)
+  )
+}
+
 ```
 
 ```{r}
@@ -123,7 +177,7 @@ fit_hierarchical = stan(hierarchical_stan_model, data=data)
 
 ```{r}
 fit_hierarchical_data = extract(fit_hierarchical, permuted=T)
-print(fit_hierarchical_data)
+print(fit_hierarchical)
 ```
 
 
@@ -136,4 +190,52 @@ print(loo_hierarchical_data)
 
 ```{r}
 plot(loo_hierarchical_data)
+```
+
+## PPC for Separate Model
+
+```{r}
+y_rep <- as.matrix(fit_separate, pars = "y_rep")
+  
+for (i in seq(1:number_of_cities)){
+  x_temp = x
+  y_temp = y
+  
+  a = ((i-1)*49) +1
+  b = i*49
+  
+  print(
+    ppc_dens_overlay(y[a:b], y_rep[1:1000, a:b])
+  )
+}
+```
+
+## PPC for Hierarchical Model
+
+```{r}
+y_rep <- as.matrix(fit_hierarchical, pars = "y_rep")
+  
+for (i in seq(1:number_of_cities)){
+  x_temp = x
+  y_temp = y
+  
+  a = ((i-1)*49) +1
+  b = i*49
+  
+  print(
+    ppc_dens_overlay(y[a:b], y_rep[1:1000, a:b])
+  )
+}
+```
+
+
+### Model Checking
+
+```{r}
+y_rep_draws_hierarchical <- as.matrix(fit_hierarchical, pars = "y_rep")
+y_rep_draws_separate <- as.matrix(fit_separate, pars = "y_rep")
+
+y_reps <- cbind(separate = y_rep_draws_separate[, 1],
+                 hierarchical = y_rep_draws_hierarchical[, 1])
+mcmc_areas(y_reps, prob = 0.95)
 ```

@@ -8,6 +8,7 @@ library(rstan)
 library(ggplot2)
 library(dplyr)
 library(bayesplot)
+library(matrixStats)
 ```
 
 # Finnish Water Rise : Kemi
@@ -125,7 +126,7 @@ fit_separate_data = extract(fit_separate, permuted=T)
 print(fit_separate)
 ```
 
-```
+```{r}
 for (i in seq(1:number_of_cities)){
   x_temp = x
   y_temp = y
@@ -133,20 +134,26 @@ for (i in seq(1:number_of_cities)){
   a = ((i-1)*49) +1
   b = i*49
   
-  mean_alpha = mean(fit_separate_data$alpha[,i])
-  mean_beta = mean(fit_separate_data$beta[,i])
-  mu = fit_separate_data$alpha[,i] + (x_temp[a:b] * fit_separate_data$beta[,i])
+  #mean_alpha = mean(fit_separate_data$alpha[,i])
+  #mean_beta = mean(fit_separate_data$beta[,i])
   
+  s = seq(1,49)
+  s_m = matrix(s,nrow = 49, ncol = 1)
+  f_t_ma = matrix(fit_separate_data$beta[,i], nrow = 1, ncol = 4000)
   
-  mu <- apply(mu, 2, quantile, c(0.05, 0.5, 0.95)) %>%
-  t() %>% data.frame(x = data_plot$x, .)  %>% gather(pct, y_temp[a:b], -x_temp[a:b])
+  mu = fit_separate_data$alpha[,i] + (s_m %*% f_t_ma)
+  mu_matrix = matrix(mu, nrow = 4000, ncol = 49)
   
-  print(
-    ggplot() +
-    geom_point(aes(x_temp[a:b], y_temp[a:b]), data=data.frame(data_plot), size = 1) +
-    geom_line(aes(x_temp[a:b], y_temp[a:b], linetype=pct), data = data.frame(mu), color = 'red') +
-    labs(y = 'Water Level', x= "Year") +
-    guides(linetype = F)
+  post_quan = colQuantiles(mu_matrix, probs=c(0.05, 0.50, 0.95))
+  post_quan = unname(post_quan)
+  
+  df_post = data.frame(quan_05=post_quan[,1], quan_50=post_quan[,2], quan_95=post_quan[,3])
+
+  print(ggplot(df_post, aes(x=x_temp[a:b], y=y_temp[a:b])) +
+      geom_point(color="darkblue") +
+      geom_line(aes(y = quan_05), color = "darkred", linetype="twodash") +
+      geom_line(aes(y = quan_50), color="darkred") +
+      geom_line(aes(y = quan_95), color="darkred", linetype="twodash")
   )
 }
 
@@ -191,6 +198,40 @@ print(loo_hierarchical_data)
 ```{r}
 plot(loo_hierarchical_data)
 ```
+
+
+```{r}
+for (i in seq(1:number_of_cities)){
+  x_temp = x
+  y_temp = y
+  
+  a = ((i-1)*49) +1
+  b = i*49
+  
+  #mean_alpha = mean(fit_separate_data$alpha[,i])
+  #mean_beta = mean(fit_separate_data$beta[,i])
+  
+  s = seq(1,49)
+  s_m = matrix(s,nrow = 49, ncol = 1)
+  f_t_ma = matrix(fit_hierarchical_data$beta[,i], nrow = 1, ncol = 4000)
+  
+  mu = fit_hierarchical_data$alpha[,i] + (s_m %*% f_t_ma)
+  mu_matrix = matrix(mu, nrow = 4000, ncol = 49)
+  
+  post_quan = colQuantiles(mu_matrix, probs=c(0.05, 0.50, 0.95))
+  post_quan = unname(post_quan)
+  
+  df_post = data.frame(quan_05=post_quan[,1], quan_50=post_quan[,2], quan_95=post_quan[,3])
+
+  print(ggplot(df_post, aes(x=x_temp[a:b], y=y_temp[a:b])) +
+      geom_point(color="darkblue") +
+      geom_line(aes(y = quan_05), color = "darkred", linetype="twodash") +
+      geom_line(aes(y = quan_50), color="darkred") +
+      geom_line(aes(y = quan_95), color="darkred", linetype="twodash")
+  )
+}
+```
+
 
 ## PPC for Separate Model
 

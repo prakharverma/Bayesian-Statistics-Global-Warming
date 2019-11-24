@@ -8,6 +8,8 @@ library(rstan)
 library(ggplot2)
 library(dplyr)
 library(bayesplot)
+library(cowplot)
+library(loo)
 library(matrixStats)
 ```
 
@@ -34,7 +36,6 @@ hierarchical_stan_model = "../model/hierarchical.stan"
 ## Loading data once it has been pre_processed
 
 ```{r}
-
 combineListsAsOne <-function(list1, list2){
   n <- c()
   for(x in list1){
@@ -45,14 +46,11 @@ combineListsAsOne <-function(list1, list2){
   }
   return(n)
 }
-
-
 number_of_cities = 0
 x = list()
 y = list()
 ii = list()
 city_names = list()
-
 for (data_file in list.files(main_data_dir, pattern="*_yearly_means.csv", full.names=TRUE, recursive = TRUE)){
   preprocessed_data = read.csv(data_file, header=FALSE)
   
@@ -69,7 +67,6 @@ for (data_file in list.files(main_data_dir, pattern="*_yearly_means.csv", full.n
     ii = combineListsAsOne(ii, number_of_cities)
   }
 }
-
 print("Data Loaded successfully")
 ```
 
@@ -82,7 +79,6 @@ data_plot = list(
     'y'= y[1:49],
     'k' = number_of_cities
 )
-
 for (i in seq(1:number_of_cities)){
   x_temp = x
   y_temp = y
@@ -95,7 +91,6 @@ for (i in seq(1:number_of_cities)){
     labs(y = 'Water level', x= "Year", title = city_names[i]) +
     guides(linetype = F))
 }
-
 ```
 
 ## Preparing data for Stan model
@@ -108,9 +103,8 @@ data = list(
     'k' = number_of_cities,
     'i' = ii
 )
-
 print("Data ready for Stan model")
-print(data)
+#print(data)
 ```
 
 ## Separate Stan Model
@@ -126,37 +120,38 @@ fit_separate_data = extract(fit_separate, permuted=T)
 print(fit_separate)
 ```
 
+
+# Plots for all cities with slope line and quantiles 
+
 ```{r}
-for (i in seq(1:number_of_cities)){
-  x_temp = x
-  y_temp = y
+mu = matrix(data = NA, nrow = 49, ncol = 4000)
+
+for(i in seq(1:number_of_cities)){
   
   a = ((i-1)*49) +1
   b = i*49
   
-  #mean_alpha = mean(fit_separate_data$alpha[,i])
-  #mean_beta = mean(fit_separate_data$beta[,i])
+  x_temp = x[a:b]
+  y_temp = y[a:b]
   
-  s = seq(1,49)
-  s_m = matrix(s,nrow = 49, ncol = 1)
-  f_t_ma = matrix(fit_separate_data$beta[,i], nrow = 1, ncol = 4000)
-  
-  mu = fit_separate_data$alpha[,i] + (s_m %*% f_t_ma)
-  mu_matrix = matrix(mu, nrow = 4000, ncol = 49)
-  
-  post_quan = colQuantiles(mu_matrix, probs=c(0.05, 0.50, 0.95))
-  post_quan = unname(post_quan)
-  
-  df_post = data.frame(quan_05=post_quan[,1], quan_50=post_quan[,2], quan_95=post_quan[,3])
+  for(t in seq(from = 1970, to =2019, by =1)){
+    mu[t-1970,] =  fit_separate_data$alpha[,i] + ((t-1970) * fit_separate_data$beta[,i])
+  }
 
-  print(ggplot(df_post, aes(x=x_temp[a:b], y=y_temp[a:b])) +
-      geom_point(color="darkblue") +
-      geom_line(aes(y = quan_05), color = "darkred", linetype="twodash") +
-      geom_line(aes(y = quan_50), color="darkred") +
-      geom_line(aes(y = quan_95), color="darkred", linetype="twodash")
+  mu_quan = colQuantiles(t(mu), probs = c(0.05, 0.5, 0.95))
+  
+  df_post = data.frame(quan_05=mu_quan[,1], quan_50=mu_quan[,2], quan_95=mu_quan[,3], x=x_temp)
+  
+  print(
+    ggplot(df_post, aes(x=x_temp, y=y_temp)) +
+    geom_point(color="darkblue") +
+    geom_line(aes(y = quan_05), color = "darkred", linetype="twodash", size = 1.1) +
+    geom_line(aes(y = quan_50), color="darkred", linetype = "solid", size = 1.2) +
+    geom_line(aes(y = quan_95), color="darkred", linetype="twodash", size = 1.1)+
+       labs(y = 'Water level', x= "Year", title = city_names[i]) +
+    guides(linetype = F)
   )
 }
-
 ```
 
 ```{r}
@@ -199,40 +194,6 @@ print(loo_hierarchical_data)
 plot(loo_hierarchical_data)
 ```
 
-
-```{r}
-for (i in seq(1:number_of_cities)){
-  x_temp = x
-  y_temp = y
-  
-  a = ((i-1)*49) +1
-  b = i*49
-  
-  #mean_alpha = mean(fit_separate_data$alpha[,i])
-  #mean_beta = mean(fit_separate_data$beta[,i])
-  
-  s = seq(1,49)
-  s_m = matrix(s,nrow = 49, ncol = 1)
-  f_t_ma = matrix(fit_hierarchical_data$beta[,i], nrow = 1, ncol = 4000)
-  
-  mu = fit_hierarchical_data$alpha[,i] + (s_m %*% f_t_ma)
-  mu_matrix = matrix(mu, nrow = 4000, ncol = 49)
-  
-  post_quan = colQuantiles(mu_matrix, probs=c(0.05, 0.50, 0.95))
-  post_quan = unname(post_quan)
-  
-  df_post = data.frame(quan_05=post_quan[,1], quan_50=post_quan[,2], quan_95=post_quan[,3])
-
-  print(ggplot(df_post, aes(x=x_temp[a:b], y=y_temp[a:b])) +
-      geom_point(color="darkblue") +
-      geom_line(aes(y = quan_05), color = "darkred", linetype="twodash") +
-      geom_line(aes(y = quan_50), color="darkred") +
-      geom_line(aes(y = quan_95), color="darkred", linetype="twodash")
-  )
-}
-```
-
-
 ## PPC for Separate Model
 
 ```{r}
@@ -270,13 +231,16 @@ for (i in seq(1:number_of_cities)){
 ```
 
 
-### Model Checking
+### Model Checking -- Not sure if this is the correct way or ELPD one.
 
 ```{r}
-y_rep_draws_hierarchical <- as.matrix(fit_hierarchical, pars = "y_rep")
-y_rep_draws_separate <- as.matrix(fit_separate, pars = "y_rep")
-
+y_rep_draws_hierarchical <- as.matrix(fit_hierarchical, pars = "alpha")
+y_rep_draws_separate <- as.matrix(fit_separate, pars = "alpha")
 y_reps <- cbind(separate = y_rep_draws_separate[, 1],
                  hierarchical = y_rep_draws_hierarchical[, 1])
 mcmc_areas(y_reps, prob = 0.95)
+```
+
+```{r}
+compare(loo_hierarchical_data, loo_separate_data)
 ```

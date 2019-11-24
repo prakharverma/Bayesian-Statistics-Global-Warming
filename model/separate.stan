@@ -14,7 +14,7 @@ parameters {
 }
 
 model {
-  beta ~ normal(3.2,10^2);
+  beta ~ normal(0,10);
   y ~ normal(alpha[i] + beta[i] .* (x-1970), sigma[i]);
 }
 

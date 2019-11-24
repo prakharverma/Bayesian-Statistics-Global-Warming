@@ -9,13 +9,13 @@ data {
 parameters {
   vector[k] beta;
   vector[k] alpha;
-  real sigma;
-  real sigma0;
+  real <lower=0> sigma;
+  real <lower=0> sigma0;
   real beta0;
 }
 
 model {
-  beta0 ~ normal(3.2,10^2);
+  beta0 ~ normal(0,10);
   sigma0 ~ normal(0, 10);
   beta ~ normal(beta0, sigma0);
   y ~ normal(alpha[i] + beta[i] .* (x-1970), sigma);

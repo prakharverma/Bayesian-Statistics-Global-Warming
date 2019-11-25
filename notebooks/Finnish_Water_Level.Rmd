@@ -8,7 +8,6 @@ library(rstan)
 library(ggplot2)
 library(dplyr)
 library(bayesplot)
-library(cowplot)
 library(loo)
 library(matrixStats)
 ```
@@ -192,6 +191,37 @@ print(loo_hierarchical_data)
 
 ```{r}
 plot(loo_hierarchical_data)
+```
+
+```{r}
+mu = matrix(data = NA, nrow = 49, ncol = 4000)
+
+for(i in seq(1:number_of_cities)){
+  
+  a = ((i-1)*49) +1
+  b = i*49
+  
+  x_temp = x[a:b]
+  y_temp = y[a:b]
+  
+  for(t in seq(from = 1970, to =2019, by =1)){
+    mu[t-1970,] =  fit_hierarchical_data$alpha[,i] + ((t-1970) * fit_hierarchical_data$beta[,i])
+  }
+
+  mu_quan = colQuantiles(t(mu), probs = c(0.05, 0.5, 0.95))
+  
+  df_post = data.frame(quan_05=mu_quan[,1], quan_50=mu_quan[,2], quan_95=mu_quan[,3], x=x_temp)
+  
+  print(
+    ggplot(df_post, aes(x=x_temp, y=y_temp)) +
+    geom_point(color="darkblue") +
+    geom_line(aes(y = quan_05), color = "darkred", linetype="twodash", size = 1.1) +
+    geom_line(aes(y = quan_50), color="darkred", linetype = "solid", size = 1.2) +
+    geom_line(aes(y = quan_95), color="darkred", linetype="twodash", size = 1.1)+
+       labs(y = 'Water level', x= "Year", title = city_names[i]) +
+    guides(linetype = F)
+  )
+}
 ```
 
 ## PPC for Separate Model

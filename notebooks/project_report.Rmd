@@ -1,0 +1,254 @@
+---
+title: "Finnish Water Level"
+output: pdf_document
+---
+
+\section{Introduction}
+Today, one of the biggest threat to the society is global warming. Sea level rise is the immediate result of global warming as it melts the ice sheets and  expands the water volume. Cities like Venice, New Orleans and Osaka are expected to experience major problems with the rise in sea level in near future. 
+
+Venice is already facing major problems. 
+
+\begin{figure}[h!]
+\centerline{\includegraphics[width=200pt]{../img/venice.png}}
+  \caption{Venice Floods}
+  \label{Figure 1}
+\end{figure}
+
+
+Goal of the project is to examine how much the sea level rise affects the coastal cities in Finland. For purpose of the study, four cities from coastal Finland are selected and the data from January, 1970 to November, 2019 is used. Linear regression with Gaussian noise,  $Error \sim N(0, \sigma^2)$, is fitted on the data to check the threat on Finnish cities.
+
+The further sections discuss about the data and its pre-processing followed by a discussion on priors, Stan models and the results obtained. We conclude the report with our findings and possible future work.
+
+\section{Data}
+
+To find out about the sea level rise in Finland we need hostorical data about the same. In Finland, the \href{https://ilmatieteenlaitos.fi/havaintojen-lataus#!/}{Finnish Meteorologigal Institute} provides open data about the weather and it was an easy portal to download the data needed for the study. The data from January, 1970 to November, 2019 was taken for the study. The cities are selected in a way that they are evenly distributed around the coast line so that the study covers the overall situation in Finland. The selected cities are Kemi, Turku, Helsinki and Oulu. 
+
+The data is useful for weather analysis and is available openly so the results can be made public as the data is public. 
+
+\begin{figure}[h]
+\centerline{\includegraphics[width=150pt]{../img/map.png}}
+  \caption{Cities selected for the study}
+  \label{Figure 2}
+\end{figure}
+
+\subsection{Format of Data}
+Data by Finnish Meteorologigal Institute is collected every hour for every day throughout the year, i.e. 24 * 30 * 365 readings are available for each city per year.
+
+\begin{figure}[h]
+\centerline{\includegraphics[width=150pt]{../img/data_example.png}}
+  \caption{Raw Data}
+  \label{Figure 3}
+\end{figure}
+
+\subsection{Data pre-processing}
+
+Once the data is downloaded it is essential to know the zero of the scale of measurement i.e. the height system in which the values are given. In Finland there are a number of systems available from which we used N2000.
+
+Thus all the data was normalized using N2000 data which was available on the Finnish Meteorologigal Institute  website,  \href{https://en.ilmatieteenlaitos.fi/theoretical-mean-sea-level}{N2000 data}
+
+Also, the data was too accurate so the mean of sea level for each year was calculated.
+
+The whole pre-processing script can be found in the Appendix section.
+
+\subsection{Processed Data}
+
+After pre-processing the data consists of one mean sea-level value per year. The example can be found in Figure 3.
+
+\begin{figure}[h]
+\centerline{\includegraphics[width=150pt]{../img/processed_data.png}}
+  \caption{Processed Data}
+  \label{Figure 3}
+\end{figure}
+
+\section{Project Workflow}
+In this section all the statistical terms that are used throughout the report for comparing and analyzing models are discussed.
+These terms will also provide a general flow of what we do for each model in the Bayesian Work-flow. It follows the steps as shown below
+\begin{itemize}
+    \item Define the Bayesian Models and Priors
+    \item Run the models and fit the data
+    \item Check Convergence Statistics
+    \item Perform Posterior Predictive Analysis
+    \item Visualize model through plots
+    \item Perform PSIS LOO cross validation
+    \item Perform Model evaluation
+\end{itemize}
+
+\subsection{Models}
+We fit a \textbf{gaussian linear model} to the time series data from 1970 to 2019. Setting year 1970 as origin which makes our slope parameter relative to year 1970 and our intercept modelled for year 1970. Since we had measurements from 4 different geographical locations we decided to try a \textbf{hierarchial model} in addition to a \textbf{separate model}.
+\\
+\\
+The Guassian Linear Model is defined as : 
+$y = \beta x + \alpha$
+where $\beta$ is the slope, $\alpha$ is a constant and $x$ is the year number. 
+\\
+\\
+Different priors for both the model were tested which is described in the next section. Based on the results of these, suitable weakly informative priors were chosen for the models.
+\subsection{Sensitivity Analysis of Priors}
+\subsubsection{Informative Priors}
+According to \href{https://sealevel.nasa.gov/understanding-sea-level/key-indicators/global-mean-sea-level/}{NASA}, the global mean sea level rise is \textbf{3.3} which can be used as a prior. However, it is a very informative prior so weakly informative priors were defined to fit the models. 
+\subsubsection{Weakly Informative Priors}
+The weakly informative priors used are:
+\begin{enumerate}
+    \item $N(3.2,100)$
+    \item $N(0,100)$
+    \item $N(0,10)$
+\end{enumerate}
+
+\section{Model Fitting}
+\subsection{Separate Model}
+We will use a weakly informative prior which is $N \sim (0,10)$ , so 0 is the prior mean for our slope and 10 is the standard deviation. We do not give any prior to alpha because want to let the slope approximate the data as well as possible. 
+\\
+
+\subsubsection{Priors}
+$p(\beta_g) \sim N(0,10)$
+\subsubsection{Likelihood}
+$p(y|\theta) \sim N(\alpha_g + \beta_g (\textbf{x}-1970) | \sigma_g)$
+
+
+\subsection{Hierarchical Model}
+Having grouped data from 4 different locations it makes sense to try a hierarchial model. We use a prior distribution based on the same global data as our seperate model $N \sim (0,10)$. $\beta_0$ is used as a common mean for modelling the slopes for each location. Then another hyperprior $p(\sigma_0) \sim N(0,10)$ is used as a common variance for the slopes.
+
+\subsubsection{Hyperpriors}
+$p(\beta_0) \sim N(0|10)$
+\\
+$p(\sigma_0) \sim N(0 | 10)$
+
+\subsubsection{Priors}
+$p(\beta_g) \sim N(\beta_0 | \sigma_0)$
+
+\subsubsection{Likelihood}
+$p(y|\theta) \sim N(\alpha_g + \beta_g (\textbf{x}-1970) | \sigma)$
+
+\subsection{Convergence Statistics in Stan}
+\begin{table}[h]
+    \centering
+    \begin{tabular}{||c|c|c|c|c|c|c|c||}
+           \hline
+            Variable & mean & se\_mean & sd &2.50\% & 97.50\% & n\_eff & Rhat \\
+            \hline
+             &  &  & & & & &
+
+    \end{tabular}
+    \caption{Sample table layout for convergence statistics}
+    \label{tab:my_label}
+\end{table}
+
+For each parameter (variable) of the model, the format as shown in Table 1 shows:
+\begin{itemize}
+    \item The mean column shows the mean for each variable of all the posterior draws of that variable generated in Markov Chain Monte Carlo (MCMC) simulation.
+    \item The se$\_$mean column shows standard errors (se) for the posterior means. Standard error of the mean (SEM) depends both on the standard deviation (SD) and the sample size (n): SE = SD/$\sqrt{n}$.
+    \item The sd column tells the standard deviation (SD). SD is a measure of variability or dispersion.
+    \item The 2.5 $\%$ column reports the value corresponding the lower bound of 95$\%$  confidence interval.
+    \item The 97.5 $\%$  column reports the value corresponding the upper bound of 95$\%$  confidence interval.
+    \item The n$\_$eff  column tells the effective number of simulation draws, called the effective sample size, n$\_$eff
+    \item The Rhat column reports us the values of Rˆ that is our convergence statistic, Rˆ. Here we will consider the threshold of 1.01 for the condition of Rˆ being ’near’ 1 . If Rˆ $>$ 1.01, we consider that the chains have not converged, while if Rˆ $<$ 1.01 we consider that the chains have probably converged and estimates are reliable.
+\end{itemize}
+
+The Results section will show the detail of the convergence statistics for both Separate and Hierarchical model. 
+
+\subsection{Leave One out cross validation}
+Leave-one-out cross-validation (LOO-CV or LOO) is a method to evaluate the predictive performance of
+fitted models for a data set. LOO-CV is an approach for estimating pointwise out-of-sample prediction
+accuracy from the fitted models using the log-likelihood assessed at the posterior simulations of the parameter
+values.
+
+Here we use Pareto smoothed importance sampling (PSIS) LOO (PSIS-LOO) method for computing ap-
+proximate LOO-CV given the posterior draws of the parameters. PSIS is a new approach that makes it
+possible to compute LOO using importance weights that would otherwise be unstable. PSIS fits a Pareto
+distribution to the upper tail of the distribution of the importance weights, and in this way provides relatively
+accurate and reliable estimate.
+
+PSIS-LOO estimate is the sum of the LOO log predictive densities. The reliability of the PSIS-LOO estimates
+are assessed for a fitted model based on the k-values that are the estimated Pareto tail indices. The PSIS-LOO
+estimate can be considered reliable if all k-values are k $<$ 0.5. Otherwise, we have a concern that the
+PSIS-LOO estimate may be biased i.e. it is possible that the estimate is too optimistic, overestimating the
+predictive accuracy of the fitted model.
+
+When we are comparing different models which have the same target we should choose the model with the
+highest PSIS-LOO estimate. This is called elpd$\_$loo which stands for "expected log predictive density" for
+the loo that is reliable i.e. all k $<$ 0.5.
+
+
+\section{Results}
+
+\subsection{Separate Model}
+\subsubsection{Convergence Statistics}
+\subsubsection{Loo}
+\subsubsection{Plots}
+\subsubsection{Analysis}
+
+
+
+\subsection{Hierarchical Model}
+\subsubsection{Convergence Statistics}
+\subsubsection{Loo}
+\subsubsection{Plots}
+\subsubsection{Analysis}
+
+
+\subsection{Posterior Predictive checking}
+
+We created several replicated datasets and compared these distributions to the distribution of our data visually. We can see that model fits the data quite well except around the positive values. Here our data is not normally distributed and there is a disproportionate amount of values around 0 compared to what a normal distribution would have. This could mean that our linear model is not optimal for this problem and that instead we should use some form of exponential model to capture this disproportionate amount of higher values. Based on this it might be possible that the sea level is increasing with an exponential trend in the Baltic Sea.
+
+
+\section{Model Comparison}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Conclusion}
+The threat of global warming and climate change is present in every place on the globe. It can be social, political or immediate threat from changing weather conditions. In Finland we are in lucky position that the changing conditions are not yet severe but the future changes are not yet known. The sea level rise in Finland is not a huge factor although in Gulf of Bothnia the sea level rises in some places 5 millimeters a year. However because of the Ice Age, the ground rises in that area almost 8 millimeters a year in that area. Also in southern Finland the Post-glacial rebound is about 4 to 5 millimeters a year and the in the Gulf of Finland the sea levels are actually decreasing.
+
+The fact that the sea level rise is not a factor in Finland does not of course mean that the climate change does not affect to Finland and we could ignore it. The fight against climate change should be a shared problem between the nations and none should or could ignore the future of our home.
+
+\section{Improvement to the Project}
+We settled into the linear regression quite early going into the project. We tried some polynomial fittings also but they started to over fit quite severely. To improve this project we could have maybe tried more to find better models to fit into our problem. However we are quite happy with the results we got out of the data.
+
+
+\section{Appendix}
+\subsection{Python Code for Pre-processing Data}
+
+\subsection{R Code for Analysis}
+    
+
+
+
+
+
+
+
+
+
+\newpage
+\section{WHAT ALL TO DO }
+The submitted notebooks need to illustrate the knowledge of the
+  Bayesian workflow. It has to include:
+\begin{itemize}
+  \item Description of the data, and the analysis problem
+  \item Description of at least two models, for example:
+    \begin{itemize}
+    \item non-hierarchical and hierarchical
+    \item linear and non-linear
+    \item variable selection with many models
+    \end{itemize}
+  \item Informative or weakly informative priors, and description of the prior choices
+  \item Stan code
+  \item How Stan model is run
+  \item Convergence diagnostics (Rhat, divergences, ESS)
+  \item Posterior predictive checking
+  \item Model comparison (e.g. with loo)
+  \item Predictive performance assessment if applicable
+    (e.g. classification accuracy)
+  \item Sensitivity analysis with respect to prior choices
+  \item Discussion of problems, and potential improvements 
+\end{itemize}

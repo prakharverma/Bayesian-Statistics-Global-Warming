@@ -25,17 +25,19 @@ To find out about the sea level rise in Finland we need hostorical data about th
 
 The data is useful for weather analysis and is available openly so the results can be made public as the data is public. 
 
-\begin{figure}[h]
+\begin{figure}
 \centerline{\includegraphics[width=150pt]{../img/map.png}}
   \caption{Cities selected for the study}
   \label{Figure 2}
 \end{figure}
 
+\newpage
+
 \subsection{Format of Data}
 Data by Finnish Meteorologigal Institute is collected every hour for every day throughout the year, i.e. 24 * 30 * 365 readings are available for each city per year.
 
 \begin{figure}[h]
-\centerline{\includegraphics[width=150pt]{../img/data_example.png}}
+\centerline{\includegraphics[width=300pt]{../img/data_example.png}}
   \caption{Raw Data}
   \label{Figure 3}
 \end{figure}
@@ -55,12 +57,12 @@ The whole pre-processing script can be found in the Appendix section.
 After pre-processing the data consists of one mean sea-level value per year. The example can be found in Figure 3.
 
 \begin{figure}[h]
-\centerline{\includegraphics[width=150pt]{../img/processed_data.png}}
+\centerline{\includegraphics[width=300pt]{../img/processed_data.png}}
   \caption{Processed Data}
   \label{Figure 3}
 \end{figure}
 
-\section{Project Workflow}
+\section{Terminologies}
 In this section all the statistical terms that are used throughout the report for comparing and analyzing models are discussed.
 These terms will also provide a general flow of what we do for each model in the Bayesian Work-flow. It follows the steps as shown below
 \begin{itemize}

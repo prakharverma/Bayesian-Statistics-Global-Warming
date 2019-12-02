@@ -7,6 +7,70 @@ include: pdf_document
 
 \section * {Appendix}
 
+## Pre-processing script (written in Python)
+
+```
+import os.path
+
+import pandas as pd
+
+
+def process_data(data_path, mean_sea_level_path, output_file_path, yearly_means_output_path):
+    print(f"Pre-processing file: {data_path}")
+
+    data = pd.read_csv(data_path)
+    mean_sea_level_data = pd.read_csv(mean_sea_level_path)
+
+    # if file exist then don't create a new one and read from it only
+    if os.path.isfile(output_file_path):
+        n_data = pd.read_csv(output_file_path)
+        print(f"Read normalized data from {output_file_path}")
+    else:
+        n_data = data.copy()
+
+        for i, row in n_data.iterrows():
+            # FIXME: Small hack : to show the progress bar
+            if i % 1000 == 0:
+                print('\r ready: %.3f%%' % (i / len(n_data) * 100), end=" ")
+
+            # main normalizing step, N2000
+            # water_level - mean sea level data for that particular year
+            n_data.iat[i, 5] = row['Water level (mm)'] - 
+                               mean_sea_level_data.loc[mean_sea_level_data['Year'] ==
+                               row['Year']].values[0][1]
+
+        n_data = n_data.rename(columns={'Water level (mm)': 'water_level'})
+
+        n_data.to_csv(output_file_path)
+
+        print(f"\nWrote output to {output_file_path}")
+
+    # finding the mean value of each year
+    yearly_means = n_data["water_level"].groupby(n_data["Year"]).mean().dropna()
+
+    with open(yearly_means_output_path, "w") as f:
+        f.writelines(pd.Series.to_csv(yearly_means))
+
+    return yearly_means
+
+
+if __name__ == '__main__':
+    data_path = r"../data/Kemi/Kemi.csv"
+    mean_sea_level_path = r"../data/Kemi/Kemi_mw_n2000.csv"
+    normalized_output_path = r"../data/Kemi/Kemi_normalized.csv"
+    yearly_means_output_path = r"../data/Kemi/Kemi_yearly_means.csv"
+
+    yearly_mean = process_data(data_path, 
+                              mean_sea_level_path, 
+                              normalized_output_path, 
+                              yearly_means_output_path)
+
+    print(yearly_mean)
+
+```
+
+
+
 ```{r message=FALSE, warning=FALSE, results='hide'}
 library(rstan)
 library(ggplot2)
@@ -24,7 +88,7 @@ separate_stan_model = "../model/separate.stan"
 hierarchical_stan_model = "../model/hierarchical.stan"
 ```
 
-## Loading data once it has been pre_processed
+## Loading data once it has been pre\_processed
 
 ```{r warning=FALSE, results='hide', message=FALSE}
 combineListsAsOne <-function(list1, list2){
@@ -42,7 +106,11 @@ x = list()
 y = list()
 ii = list()
 city_names = list()
-for (data_file in list.files(main_data_dir, pattern="*_yearly_means.csv", full.names=TRUE, recursive = TRUE)){
+for (data_file in list.files(main_data_dir, 
+                             pattern="*_yearly_means.csv", 
+                             full.names=TRUE, 
+                             recursive = TRUE)){
+  
   preprocessed_data = read.csv(data_file, header=FALSE)
   
   c_name = strsplit(strsplit(data_file, "/")[[1]][4],"_")[[1]][1]
@@ -109,12 +177,20 @@ for(i in seq(1:number_of_cities)){
   y_temp = y[a:b]
   
   for(t in seq(from = 1970, to =2019, by =1)){
-    mu[t-1970,] =  fit_separate_data$alpha[,i] + ((t-1970) * fit_separate_data$beta[,i])
+    mu[t-1970,] =  fit_separate_data$alpha[,i] + ((t-1970) * 
+                                                    
+                                                    fit_separate_data$beta[,i])
   }
 
   mu_quan = colQuantiles(t(mu), probs = c(0.05, 0.5, 0.95))
   
-  df_post = data.frame(quan_05=mu_quan[,1], quan_50=mu_quan[,2], quan_95=mu_quan[,3], x=x_temp)
+  df_post = data.frame(quan_05=mu_quan[,1],
+                       
+                       quan_50=mu_quan[,2],
+                       
+                       quan_95=mu_quan[,3],
+                       
+                       x=x_temp)
 }
 ```
 
@@ -296,13 +372,13 @@ In this section a general overview of what is done in the project is provided an
 
 \subsection{Models}
 A \textbf{gaussian linear model} to the time series data from 1970 to 2019 is fitted. Setting year 1970 as origin which makes the slope parameter relative to year 1970 and the intercept modelled for year 1970. Since measurements were collected from 4 different geographical locations it was decided to try a \textbf{hierarchial model} in addition to a \textbf{separate model}.
-\\
-\\
+
+
 The Guassian Linear Model is defined as : 
 $y = \beta x + \alpha$
 where $\beta$ is the slope, $\alpha$ is a constant and $x$ is the year number. 
-\\
-\\
+
+
 Different priors for both the model were tested which is described in the next section. Based on the results of these, suitable weakly informative priors were chosen for the models.
 
 \subsection{Sensitivity Analysis of Priors}
@@ -320,7 +396,7 @@ However it was decided to use $N(0,10)$ as the prior for both the models.
 \section{Model Fitting}
 \subsection{Separate Model}
 A weakly informative prior which is $N \sim (0,10)$ is being used, so 0 is the prior mean for the slope and 10 is the standard deviation. No prior is given to alpha because the slope should approximate the data as well as possible. 
-\\
+
 
 \begin{figure}
 \centerline{\includegraphics[width=300pt]{../img/separatemodel.jpg}}
@@ -416,9 +492,11 @@ the loo that is reliable i.e. all k $<$ 0.5.
 
 As seen from the values below that the model has converged as Rhat values are below 1.01.
 
-```{r echo=FALSE}
-print(fit_separate)
-```
+\begin{figure}[h]
+\centerline{\includegraphics[width=300pt]{../img/separate_model_print.png}}
+  \caption{Separate model}
+  \label{Figure 3}
+\end{figure}
 
 \subsubsection{Loo}
 
@@ -477,9 +555,11 @@ for(i in seq(1:number_of_cities)){
 
 As seen from the values below that the model has converged as Rhat values are below 1.01.
 
-```{r echo=FALSE}
-print(fit_hierarchical)
-```
+\begin{figure}[h]
+\centerline{\includegraphics[width=300pt]{../img/hierarchical_model_print.png}}
+  \caption{Hierarchical model}
+  \label{Figure 3}
+\end{figure}
 
 \subsubsection{Loo}
 
@@ -596,6 +676,3 @@ The fact that the sea level rise is not a factor in Finland does not of course m
 
 \section{Improvement to the Project}
 We settled into the linear regression quite early going into the project. We tried some polynomial fittings also but they started to over fit quite severely. To improve this project we could have maybe tried more to find better models to fit into our problem. However we are quite happy with the results we got out of the data.
-
-
-\section * {appendix for python code for pre processing of data}

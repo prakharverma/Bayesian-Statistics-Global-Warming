@@ -1,5 +1,5 @@
 ---
-title: "Impact of Global Warming in Finland"
+title: "Impact of Global Warming on Finland"
 output: pdf_document
 include: pdf_document
 
@@ -30,7 +30,6 @@ def process_data(data_path, mean_sea_level_path, output_file_path, yearly_means_
         n_data = data.copy()
 
         for i, row in n_data.iterrows():
-            # FIXME: Small hack : to show the progress bar
             if i % 1000 == 0:
                 print('\r ready: %.3f%%' % (i / len(n_data) * 100), end=" ")
 
@@ -70,7 +69,9 @@ if __name__ == '__main__':
 
 ```
 
-## R Code Below for the Analysis
+# R Code Below for the Analysis
+
+## Loading libraries
 
 ```{r message=FALSE, warning=FALSE, results='hide'}
 library(rstan)
@@ -89,7 +90,7 @@ separate_stan_model = "../model/separate.stan"
 hierarchical_stan_model = "../model/hierarchical.stan"
 ```
 
-## Loading data once it has been pre\_processed
+## Loading data once it has been pre-processed
 
 ```{r warning=FALSE, results='hide', message=FALSE}
 combineListsAsOne <-function(list1, list2){
@@ -273,6 +274,9 @@ compare(loo_hierarchical_data, loo_separate_data)
 
 
 \newpage
+<center>
+# Impact of Global Warming on Finland
+</center>
 \section{Introduction}
 Today, one of the biggest threat to the society is global warming. Sea level rise is the immediate result of global warming as it melts the ice sheets and  expands the water volume. Cities like Venice, New Orleans and Osaka are expected to experience major problems with the rise in sea level in near future. 
 
@@ -285,13 +289,13 @@ Venice is already facing major problems.
 \end{figure}
 
 
-Goal of the project is to examine how much the sea level rise affects the coastal cities in Finland. For purpose of the study, four cities from coastal Finland are selected and the data from January, 1970 to November, 2019 is used. Linear regression with Gaussian noise,  $Error \sim N(0, \sigma^2)$, is fitted on the data to check the threat on Finnish cities.
+Goal of the project is to examine how much the sea level rise affects the coastal cities in Finland. For purpose of the study, four cities from coastal Finland were selected and the data is from January 1970 to November 2019 is used. Linear regression with Gaussian noise,  $Error \sim N(0, \sigma^2)$, is fitted on the data to check the threat on Finnish cities.
 
-The further sections discuss about the data and its pre-processing followed by a discussion on priors, Stan models and the results obtained. We conclude the report with our findings and possible future work.
+The further sections discuss the data and its pre-processing followed by a discussion on priors, Stan models, convergence statistics and the results obtained. The report is concluded with the findings and possible future work.
 
 \section{Data}
 
-To find out about the sea level rise in Finland we need hostorical data about the same. In Finland, the \href{https://ilmatieteenlaitos.fi/havaintojen-lataus#!/}{Finnish Meteorologigal Institute} provides open data about the weather and it was an easy portal to download the data needed for the study. The data from January, 1970 to November, 2019 was taken for the study. The cities are selected in a way that they are evenly distributed around the coast line so that the study covers the overall situation in Finland. The selected cities are Kemi, Turku, Helsinki and Oulu. The selected cities are shown in Figure 2.  
+To find out about the sea level rise in Finland, hostorical data is needed about the same. In Finland, the \href{https://ilmatieteenlaitos.fi/havaintojen-lataus#!/}{Finnish Meteorologigal Institute} provides open data about the weather. It is an easy portal to download the data needed for the study. The data from January 1970 to November 2019 is taken for the study. The cities are selected in a way that they are evenly distributed around the coast line so that the study covers the overall situation in Finland. The selected cities are Kemi, Turku, Helsinki and Oulu. The selected cities on map is shown in Figure 2.
 
 The data is useful for weather analysis and is available openly so the results can be made public as the data is public. 
 
@@ -304,7 +308,7 @@ The data is useful for weather analysis and is available openly so the results c
 \newpage
 
 \subsection{Format of Data}
-Data by Finnish Meteorologigal Institute is collected every hour for every day throughout the year, i.e. 24 * 30 * 365 readings are available for each city per year. A portion of this raw data is shown in Figure 3.
+Data by Finnish Meteorologigal Institute is collected every hour for every day throughout the year, i.e. 24 * 30 * 365, readings are available for each city per year. A portion of this raw data is shown in Figure 3.
 
 \begin{figure}[h]
 \centerline{\includegraphics[width=300pt]{../img/data_example.png}}
@@ -314,17 +318,17 @@ Data by Finnish Meteorologigal Institute is collected every hour for every day t
 
 \subsection{Data pre-processing}
 
-Once the data is downloaded it is essential to know the zero of the scale of measurement i.e. the height system in which the values are given. In Finland there are a number of systems available from which we used N2000.
+Once the data is downloaded, it is essential to know the zero of the scale of measurement i.e. the height system in which the values is given. In Finland there are a number of systems available from which N2000 is used.
 
-Thus all the data was normalized using N2000 data which was available on the Finnish Meteorologigal Institute  website,  \href{https://en.ilmatieteenlaitos.fi/theoretical-mean-sea-level}{N2000 data}
+Thus, the data is normalized using N2000 data which is available on the Finnish Meteorologigal Institute  website,  \href{https://en.ilmatieteenlaitos.fi/theoretical-mean-sea-level}{N2000 data}
 
-Also, the data was too accurate so the mean of sea level for each year was calculated.
+Also, the data is too accurate so the mean of sea level for each year is calculated.
 
 The whole data pre-processing script (written in Python) can be found in the Appendix section.
 
 \subsection{Processed Data}
 
-After pre-processing the data consists of one mean sea-level value per year. The example can be found in Figure 4. Visual representation of this processed data is plotted below for all 4 cities.
+After pre-processing the data consists of one mean sea-level value per year. The example can be found in Figure 4. Visual representation of this processed data is plotted below for all the 4 cities.
 
 \begin{figure}[h]
 \centerline{\includegraphics[width=300pt]{../img/processed_data.png}}
@@ -349,7 +353,7 @@ for (i in seq(1:number_of_cities)){
 
 
 \section{Project Workflow}
-In this section a general overview of what is done in the project is provided and it follows the Bayesian Work-flow. The steps are as shown below
+In this section a general overview of what is done in the project is provided and it follows the Bayesian Work-flow. The steps are shown below:
 \begin{itemize}
     \item Define the Bayesian Models
     \item Perform sensitivity analysis of priors and choose appropriate prior(s)
@@ -362,19 +366,19 @@ In this section a general overview of what is done in the project is provided an
 \end{itemize}
 
 \subsection{Models}
-A \textbf{gaussian linear model} to the time series data from 1970 to 2019 is fitted. Setting year 1970 as origin which makes the slope parameter relative to year 1970 and the intercept modelled for year 1970. Since measurements were collected from 4 different geographical locations it was decided to try a \textbf{hierarchial model} in addition to a \textbf{separate model}.
+A \textbf{gaussian linear model} to the time series data from 1970 to 2019 is fitted. Setting year 1970 as origin makes the slope parameter relative to year 1970 and the intercept modelled for year 1970. Since measurements are collected from 4 different geographical locations it is decided to try a \textbf{hierarchial model} in addition to a \textbf{separate model}.
 
 
 The Guassian Linear Model is defined as : 
-$y = \beta x + \alpha$
-where $\beta$ is the slope, $\alpha$ is a constant and $x$ is the year number. 
+\textbf{$y = \beta x + \alpha$
+where $\beta$ is the slope, $\alpha$ is a constant and $x$ is the year number.} 
 
 
-Different priors for both the model were tested which is described in the next section. Based on the results of these, suitable weakly informative priors were chosen for the models.
+Different priors for both the models were tested which is described in the next section. Based on the results of these, suitable weakly informative priors are chosen for the models.
 
 \subsection{Sensitivity Analysis of Priors}
 \subsubsection{Informative Priors}
-According to \href{https://sealevel.nasa.gov/understanding-sea-level/key-indicators/global-mean-sea-level/}{NASA}, the global mean sea level rise is \textbf{3.3} which can be used as a prior. However, it is a very informative prior so weakly informative priors were defined to fit the models. 
+According to \href{https://sealevel.nasa.gov/understanding-sea-level/key-indicators/global-mean-sea-level/}{NASA}, the global mean sea level rise is \textbf{3.3 mm} which can be used as a prior. However, it is a very informative prior so weakly informative priors were defined to fit the models. 
 \subsubsection{Weakly Informative Priors}
 The weakly informative priors tested are:
 \begin{enumerate}
@@ -401,7 +405,7 @@ $p(\beta_s) \sim N(0,10)$
 $p(y|\theta) \sim N(\alpha_s + \beta_s (\textbf{x}-1970) | \sigma_s)$
 
 \subsection{Hierarchical Model}
-Having grouped data from 4 different locations it makes sense to try a hierarchial model. A prior distribution was used, based on the same global data as the seperate model $N \sim (0,10)$. $\beta_0$ is used as a common mean for modelling the slopes for each location. Then another hyperprior $p(\sigma_0) \sim N(0,10)$ is used as a common variance for the slopes. Figure 6 shows the visual representation of the hierarchical model.
+As data is available from 4 different locations it makes sense to try a hierarchial model. A prior distribution is used, based on the same global data as the seperate model $N \sim (0,10)$. $\beta_0$ is used as a common mean for modelling the slope for each location. Then another hyperprior $p(\sigma_0) \sim N(0,10)$ is used as a common variance for the slopes. Figure 6 shows the visual representation of the hierarchical model.
 
 
 \begin{figure}[h]
@@ -511,7 +515,7 @@ generated quantities{
 ```
 \subsubsection{Convergence Statistics}
 
-Model convergences means that the sampling chains have merged so that the samples start represent the sampled distribution. The  R-hat  values tells us how well the model has convergenced with respect to a parameter. It generally should be 0.9 and 1.1. It can be seen from Figure 7, the  R-hat  values are all very close to 1 and therefore it can be said that the separate model has converged.
+Model convergences means that the sampling chains have merged and the samples start representing the sampled distribution. The  R-hat  values tells how well the model has convergenced with respect to a parameter. It generally should be 0.9 and 1.1. It can be seen from Figure 7, the  R-hat  values are all very close to 1 and therefore it can be said that the separate model has converged.
 
 \begin{figure}[h]
 \centerline{\includegraphics[width=400pt]{../img/separate_model_print.png}}
@@ -522,7 +526,7 @@ Model convergences means that the sampling chains have merged so that the sample
 \newpage
 \subsubsection{Loo}
 
-It can be seen from the values and plot below that almost all k values are less than 0.5, and very few are above 0.5, so these values are biased. Although it is still a reliable model. Further hierarchical model is also calculated for comparison.
+It can be seen from the values and plot below that almost all k values are less than 0.5 and a very few are above 0.5 which are biased. Although it is still a reliable model. Further hierarchical model is also calculated for comparison.
 
 ```{r echo=FALSE}
 print(loo_separate_data)
@@ -604,7 +608,7 @@ generated quantities{
 
 \subsubsection{Convergence Statistics}
 
-Model convergences means that the sampling chains have merged so that the samples start represent the sampled distribution. The  R-hat  values tells us how well the model has convergenced with respect to a parameter. It generally should be 0.9 and 1.1. It can be seen from Figure 8, the  R-hat  values are all very close to 1 and therefore it can be said that the hierarchical model has converged.
+Model convergences means that the sampling chains have merged and the samples start representing the sampled distribution. The  R-hat  values tells how well the model has convergenced with respect to a parameter. It generally should be 0.9 and 1.1. It can be seen from Figure 8, the  R-hat values are all very close to 1 and therefore it can be said that the hierarchical model has converged.
 
 \begin{figure}[h]
 \centerline{\includegraphics[width=400pt]{../img/hierarchical_model_print.png}}
@@ -614,7 +618,7 @@ Model convergences means that the sampling chains have merged so that the sample
 
 \subsubsection{Loo}
 
-It can be seen from the values and plot below that almost all k values are less than 0.5, and almost no values are above 0.5. So it is a reliable model and performs marginally better than the Separate model computed above.
+It can be seen from the values and plot below that almost all k values are less than 0.5 and almost no values are above 0.5. So it is a reliable model and performs marginally better than the Separate model computed above.
 
 ```{r echo=FALSE}
 print(loo_hierarchical_data)
@@ -664,8 +668,8 @@ As it can be seen from the loo results table above, ESS, p-loo in table, for hie
 Hierarchical model performs better than Separate model for the following reasons:
 
 1. K-hat values in hierarchical model are very reliable
-2. ELPD value is more
-3. Effective number of parameters p_loo is less
+2. ELPD value is more for hierarchical model
+3. Effective number of parameters p_loo is less for hierarchical model
 
 These results are separately printed above and below is the result obtained from the compare function in loo. 
 
@@ -676,7 +680,7 @@ compare(loo_hierarchical_data, loo_separate_data)
 
 \subsection{Posterior Predictive checking}
 
-Several replicated datasets were created and then these distributions were compared to the distribution of the data visually. It can be seen that the model fits the data quite well except around the positive values. Here the data is not normally distributed and there is a disproportionate amount of values around 0 compared to what a normal distribution would have. This could mean that the linear model is not optimal for this problem and that instead some form of exponential model should be used to capture this disproportionate amount of higher values. Based on this it might be possible that the sea level is increasing with an exponential trend in the Baltic Sea.
+Several replicated datasets are created and then these distributions are compared to the distribution of the data visually. It can be seen that the model fits the data quite well except around the positive values. Here the data is not normally distributed and there is a disproportionate amount of values around 0 compared to what a normal distribution would have. This could mean that the linear model is not optimal for this problem and that instead some form of exponential model should be used to capture this disproportionate amount of higher values. Based on this it might be possible that the sea level is increasing with an exponential trend in the Baltic Sea.
 
 
 \subsubsection{Poster Predictive Checking for Separate Mode for each city}
@@ -717,7 +721,7 @@ for (i in seq(1:number_of_cities)){
 \section{Conclusion}
 In Finland we are in lucky position that the changing conditions are not yet severe but the future changes are not yet known. The sea level rise in Finland is not a huge factor although in Gulf of Bothnia the sea level rises in some places 5 millimeters a year. However because of the Ice Age, the ground rises in that area almost 8 millimeters a year in that area. Also in southern Finland the Post-glacial rebound is about 4 to 5 millimeters a year and in the Gulf of Finland the sea levels are actually decreasing.
 
-The fact that the sea level rise is not a huge factor in Finland does not, of course, mean that the climate change does not affect Finland and it cna be ignored.
+The fact that the sea level rise is not a huge factor in Finland does not, of course, mean that the climate change does not affect Finland and it can be ignored.
 
 The summary of the results for various cities are shown in Figure 9. 
 

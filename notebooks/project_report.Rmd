@@ -1,7 +1,8 @@
 ---
-title: "Finnish Water Level"
+title: "Impact of Global Warming in Finland"
 output: pdf_document
 include: pdf_document
+
 ---
 \newpage
 
@@ -290,7 +291,7 @@ The further sections discuss about the data and its pre-processing followed by a
 
 \section{Data}
 
-To find out about the sea level rise in Finland we need hostorical data about the same. In Finland, the \href{https://ilmatieteenlaitos.fi/havaintojen-lataus#!/}{Finnish Meteorologigal Institute} provides open data about the weather and it was an easy portal to download the data needed for the study. The data from January, 1970 to November, 2019 was taken for the study. The cities are selected in a way that they are evenly distributed around the coast line so that the study covers the overall situation in Finland. The selected cities are Kemi, Turku, Helsinki and Oulu. 
+To find out about the sea level rise in Finland we need hostorical data about the same. In Finland, the \href{https://ilmatieteenlaitos.fi/havaintojen-lataus#!/}{Finnish Meteorologigal Institute} provides open data about the weather and it was an easy portal to download the data needed for the study. The data from January, 1970 to November, 2019 was taken for the study. The cities are selected in a way that they are evenly distributed around the coast line so that the study covers the overall situation in Finland. The selected cities are Kemi, Turku, Helsinki and Oulu. The selected cities are shown in Figure 2.  
 
 The data is useful for weather analysis and is available openly so the results can be made public as the data is public. 
 
@@ -303,7 +304,7 @@ The data is useful for weather analysis and is available openly so the results c
 \newpage
 
 \subsection{Format of Data}
-Data by Finnish Meteorologigal Institute is collected every hour for every day throughout the year, i.e. 24 * 30 * 365 readings are available for each city per year.
+Data by Finnish Meteorologigal Institute is collected every hour for every day throughout the year, i.e. 24 * 30 * 365 readings are available for each city per year. A portion of this raw data is shown in Figure 3.
 
 \begin{figure}[h]
 \centerline{\includegraphics[width=300pt]{../img/data_example.png}}
@@ -319,11 +320,11 @@ Thus all the data was normalized using N2000 data which was available on the Fin
 
 Also, the data was too accurate so the mean of sea level for each year was calculated.
 
-The whole pre-processing script can be found in the Appendix section.
+The whole data pre-processing script (written in Python) can be found in the Appendix section.
 
 \subsection{Processed Data}
 
-After pre-processing the data consists of one mean sea-level value per year. The example can be found in Figure 3. Visual representation of the data is plotted below for all 4 cities.
+After pre-processing the data consists of one mean sea-level value per year. The example can be found in Figure 4. Visual representation of this processed data is plotted below for all 4 cities.
 
 \begin{figure}[h]
 \centerline{\includegraphics[width=300pt]{../img/processed_data.png}}
@@ -385,23 +386,22 @@ However it was decided to use $N(0,10)$ as the prior for both the models.
 
 \section{Model Fitting}
 \subsection{Separate Model}
-A weakly informative prior which is $N \sim (0,10)$ is being used, so 0 is the prior mean for the slope and 10 is the standard deviation. No prior is given to alpha because the slope should approximate the data as well as possible. 
+A weakly informative prior which is $N \sim (0,10)$ is being used, so 0 is the prior mean for the slope and 10 is the standard deviation. No prior is given to alpha because the slope should approximate the data as well as possible. Figure 5 shows the visual representation of the separate model.
 
 
 \begin{figure}[h]
-\centerline{\includegraphics[width=150pt]{../img/separatemodel.jpg}}
-  \caption{Separte Model}
+\centerline{\includegraphics[width=100pt]{../img/separatemodel.jpg}}
+  \caption{Separate Model}
   \label{Figure 4}
 \end{figure}
 
 \subsubsection{Priors}
-$p(\beta_g) \sim N(0,10)$
+$p(\beta_s) \sim N(0,10)$
 \subsubsection{Likelihood}
-$p(y|\theta) \sim N(\alpha_g + \beta_g (\textbf{x}-1970) | \sigma_g)$
-
+$p(y|\theta) \sim N(\alpha_s + \beta_s (\textbf{x}-1970) | \sigma_s)$
 
 \subsection{Hierarchical Model}
-Having grouped data from 4 different locations it makes sense to try a hierarchial model. A prior distribution was used, based on the same global data as the seperate model $N \sim (0,10)$. $\beta_0$ is used as a common mean for modelling the slopes for each location. Then another hyperprior $p(\sigma_0) \sim N(0,10)$ is used as a common variance for the slopes.
+Having grouped data from 4 different locations it makes sense to try a hierarchial model. A prior distribution was used, based on the same global data as the seperate model $N \sim (0,10)$. $\beta_0$ is used as a common mean for modelling the slopes for each location. Then another hyperprior $p(\sigma_0) \sim N(0,10)$ is used as a common variance for the slopes. Figure 6 shows the visual representation of the hierarchical model.
 
 
 \begin{figure}[h]
@@ -412,7 +412,7 @@ Having grouped data from 4 different locations it makes sense to try a hierarchi
 
 \subsubsection{Hyperpriors}
 $p(\beta_0) \sim N(0|10)$
-\\
+
 $p(\sigma_0) \sim N(0 | 10)$
 
 \subsubsection{Priors}
@@ -448,7 +448,7 @@ For each parameter (variable) of the model, the format as shown in Table 1 shows
     \item The Rhat column reports us the values of Rˆ that is our convergence statistic, Rˆ. Here we will consider the threshold of 1.01 for the condition of Rˆ being ’near’ 1 . If Rˆ $>$ 1.01, we consider that the chains have not converged, while if Rˆ $<$ 1.01 we consider that the chains have probably converged and estimates are reliable.
 \end{itemize}
 
-The Results section will show the detail of the convergence statistics for both Separate and Hierarchical model. 
+The Results section will show the details of the convergence statistics for both Separate and Hierarchical model. 
 
 The default tree depth in Stan is being used for HMC convergence diagnostic. 
 
@@ -511,7 +511,7 @@ generated quantities{
 ```
 \subsubsection{Convergence Statistics}
 
-Model convergences means that the sampling chains have merged so that the samples start represent the sampled distribution. The  R-hat  values tells us how well the model has convergenced with respect to a parameter. It generally should be 0.9 and 1.1. It can be seen from Figure #, the  R-hat  values are all very close to 1 and therefore it can be said that the separate model has converged.
+Model convergences means that the sampling chains have merged so that the samples start represent the sampled distribution. The  R-hat  values tells us how well the model has convergenced with respect to a parameter. It generally should be 0.9 and 1.1. It can be seen from Figure 7, the  R-hat  values are all very close to 1 and therefore it can be said that the separate model has converged.
 
 \begin{figure}[h]
 \centerline{\includegraphics[width=400pt]{../img/separate_model_print.png}}
@@ -519,6 +519,7 @@ Model convergences means that the sampling chains have merged so that the sample
   \label{Figure}
 \end{figure}
 
+\newpage
 \subsubsection{Loo}
 
 It can be seen from the values and plot below that almost all k values are less than 0.5, and very few are above 0.5, so these values are biased. Although it is still a reliable model. Further hierarchical model is also calculated for comparison.
@@ -529,7 +530,7 @@ plot(loo_separate_data)
 ```
 
 
-\subsubsection{Plots}
+\subsubsection{\textbf{Plots after Stan fit}}
 
 ```{r echo=FALSE}
 mu = matrix(data = NA, nrow = 49, ncol = 4000)
@@ -603,7 +604,7 @@ generated quantities{
 
 \subsubsection{Convergence Statistics}
 
-Model convergences means that the sampling chains have merged so that the samples start represent the sampled distribution. The  R-hat  values tells us how well the model has convergenced with respect to a parameter. It generally should be 0.9 and 1.1. It can be seen from Figure #, the  R-hat  values are all very close to 1 and therefore it can be said that the hierarchical model has converged.
+Model convergences means that the sampling chains have merged so that the samples start represent the sampled distribution. The  R-hat  values tells us how well the model has convergenced with respect to a parameter. It generally should be 0.9 and 1.1. It can be seen from Figure 8, the  R-hat  values are all very close to 1 and therefore it can be said that the hierarchical model has converged.
 
 \begin{figure}[h]
 \centerline{\includegraphics[width=400pt]{../img/hierarchical_model_print.png}}
@@ -620,7 +621,7 @@ print(loo_hierarchical_data)
 plot(loo_hierarchical_data)
 ```
 
-\subsubsection{Plots}
+\subsubsection{\textbf{Plots after Stan fit}}
 
 ```{r echo=FALSE}
 mu = matrix(data = NA, nrow = 49, ncol = 4000)
@@ -653,10 +654,14 @@ for(i in seq(1:number_of_cities)){
 }
 ```
 
+\subsection{Effective Sample Size Diagnostic (ESS)}
+
+As it can be seen from the loo results table above, ESS, p-loo in table, for hierarchical model is around 12 whereas for separate it is around 23. Hence,  hierarchical model performs better than separate model as it uses less number of parameters.
+
 
 \section{Model Comparison}
 
-Hierarchical model better than Separate model for the following reasons:
+Hierarchical model performs better than Separate model for the following reasons:
 
 1. K-hat values in hierarchical model are very reliable
 2. ELPD value is more
@@ -668,16 +673,13 @@ These results are separately printed above and below is the result obtained from
 compare(loo_hierarchical_data, loo_separate_data)
 ```
 
-\subsection{Effective Sample Size Diagnostic (ESS)}
-
-As it can be seen from the loo results table above, ESS, p-loo in table, for hierarchical model is around 12 whereas for separate it is around 23. Hence,  hierarchical model performs better than separate model as it uses less number of parameters.
 
 \subsection{Posterior Predictive checking}
 
 Several replicated datasets were created and then these distributions were compared to the distribution of the data visually. It can be seen that the model fits the data quite well except around the positive values. Here the data is not normally distributed and there is a disproportionate amount of values around 0 compared to what a normal distribution would have. This could mean that the linear model is not optimal for this problem and that instead some form of exponential model should be used to capture this disproportionate amount of higher values. Based on this it might be possible that the sea level is increasing with an exponential trend in the Baltic Sea.
 
 
-\subsubsection{Poster Predictive Checking for Separate Model}
+\subsubsection{Poster Predictive Checking for Separate Mode for each city}
 
 ```{r echo=FALSE}
 y_rep <- as.matrix(fit_separate, pars = "y_rep")
@@ -695,7 +697,7 @@ for (i in seq(1:number_of_cities)){
 }
 ```
 
-\subsubsection{Poster Predictive Checking for Hierarchical Model}
+\subsubsection{Poster Predictive Checking for Hierarchical Model for each city}
 ```{r echo=FALSE}
 y_rep <- as.matrix(fit_hierarchical, pars = "y_rep")
   
@@ -717,20 +719,20 @@ In Finland we are in lucky position that the changing conditions are not yet sev
 
 The fact that the sea level rise is not a huge factor in Finland does not, of course, mean that the climate change does not affect Finland and it cna be ignored.
 
-The summary of the results for various cities are shown in figure #. 
+The summary of the results for various cities are shown in Figure 9. 
 
 \begin{figure}[h]
 \centerline{\includegraphics[width=200pt]{../img/model_values.png}}
-  \caption{Convergence Statistics for Hierarchical model}
+  \caption{Slope values for all cities from the two models}
   \label{Figure 3}
 \end{figure}
 
-According to NASA, the average rise in water-level is 3.3 mm. Considering it, we can conclude Figure #.
+According to NASA, the average rise in water-level is 3.3 mm. Considering it, we can conclude Figure 10.
 
 
 \begin{figure}[h]
 \centerline{\includegraphics[width=200pt]{../img/city_threat.png}}
-  \caption{Convergence Statistics for Hierarchical model}
+  \caption{Analysis on the results obtained}
   \label{Figure 3}
 \end{figure}
 

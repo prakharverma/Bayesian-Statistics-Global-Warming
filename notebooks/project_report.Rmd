@@ -450,6 +450,8 @@ For each parameter (variable) of the model, the format as shown in Table 1 shows
 
 The Results section will show the detail of the convergence statistics for both Separate and Hierarchical model. 
 
+The default tree depth in Stan is being used for HMC convergence diagnostic. 
+
 \subsection{Leave One out cross validation}
 Leave-one-out cross-validation (LOO-CV or LOO) is a method to evaluate the predictive performance of
 fitted models for a data set. LOO-CV is an approach for estimating pointwise out-of-sample prediction
@@ -666,12 +668,17 @@ These results are separately printed above and below is the result obtained from
 compare(loo_hierarchical_data, loo_separate_data)
 ```
 
+\subsection{Effective Sample Size Diagnostic (ESS)}
+
+As it can be seen from the loo results table above, ESS, p-loo in table, for hierarchical model is around 12 whereas for separate it is around 23. Hence,  hierarchical model performs better than separate model as it uses less number of parameters.
+
 \subsection{Posterior Predictive checking}
 
 Several replicated datasets were created and then these distributions were compared to the distribution of the data visually. It can be seen that the model fits the data quite well except around the positive values. Here the data is not normally distributed and there is a disproportionate amount of values around 0 compared to what a normal distribution would have. This could mean that the linear model is not optimal for this problem and that instead some form of exponential model should be used to capture this disproportionate amount of higher values. Based on this it might be possible that the sea level is increasing with an exponential trend in the Baltic Sea.
 
 
 \subsubsection{Poster Predictive Checking for Separate Model}
+
 ```{r echo=FALSE}
 y_rep <- as.matrix(fit_separate, pars = "y_rep")
   

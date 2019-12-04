@@ -7,7 +7,7 @@ include: pdf_document
 
 \section * {Appendix}
 
-## Pre-processing script (written in Python)
+## Data pre-processing script in Python
 
 ```
 import os.path
@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
 ```
 
-## R Code Below
+## R Code Below for the Analysis
 
 ```{r message=FALSE, warning=FALSE, results='hide'}
 library(rstan)
@@ -264,21 +264,11 @@ for (i in seq(1:number_of_cities)){
 ```
 
 
-### Model Checking -- Not sure if this is the correct way or ELPD one.
-
-```{r warning=FALSE, results='hide', message=FALSE}
-y_rep_draws_hierarchical <- as.matrix(fit_hierarchical, pars = "alpha")
-y_rep_draws_separate <- as.matrix(fit_separate, pars = "alpha")
-y_reps <- cbind(separate = y_rep_draws_separate[, 1],
-                 hierarchical = y_rep_draws_hierarchical[, 1])
-mcmc_areas(y_reps, prob = 0.95)
-```
+### Model Checking
 
 ```{r warning=FALSE, results='hide', message=FALSE}
 compare(loo_hierarchical_data, loo_separate_data)
 ```
-
-
 
 
 \newpage
@@ -398,8 +388,8 @@ However it was decided to use $N(0,10)$ as the prior for both the models.
 A weakly informative prior which is $N \sim (0,10)$ is being used, so 0 is the prior mean for the slope and 10 is the standard deviation. No prior is given to alpha because the slope should approximate the data as well as possible. 
 
 
-\begin{figure}
-\centerline{\includegraphics[width=300pt]{../img/separatemodel.jpg}}
+\begin{figure}[h]
+\centerline{\includegraphics[width=150pt]{../img/separatemodel.jpg}}
   \caption{Separte Model}
   \label{Figure 4}
 \end{figure}
@@ -414,9 +404,9 @@ $p(y|\theta) \sim N(\alpha_g + \beta_g (\textbf{x}-1970) | \sigma_g)$
 Having grouped data from 4 different locations it makes sense to try a hierarchial model. A prior distribution was used, based on the same global data as the seperate model $N \sim (0,10)$. $\beta_0$ is used as a common mean for modelling the slopes for each location. Then another hyperprior $p(\sigma_0) \sim N(0,10)$ is used as a common variance for the slopes.
 
 
-\begin{figure}
-\centerline{\includegraphics[width=300pt]{../img/hierarchicalmodel.jpg}}
-  \caption{Separte Model}
+\begin{figure}[h]
+\centerline{\includegraphics[width=150pt]{../img/hierarchicalmodel.jpg}}
+  \caption{Hierarchical Model}
   \label{Figure 4}
 \end{figure}
 
@@ -487,20 +477,49 @@ the loo that is reliable i.e. all k $<$ 0.5.
 
 \subsection{Separate Model}
 \subsubsection{Stan Code}
+```
+data {
+  int N;
+  vector[N] y;
+  vector[N] x;
+  int k;
+  int i[N];
+}
 
+parameters {
+  vector[k] beta;
+  vector[k] alpha;
+  vector<lower=0>[k] sigma;
+}
+
+model {
+  beta ~ normal(0,10);
+  y ~ normal(alpha[i] + beta[i] .* (x-1970), sigma[i]);
+}
+
+generated quantities{
+  vector[N] log_lik;
+  vector[N] y_rep;
+ 
+ for (j in 1:N) {
+   log_lik[j] = normal_lpdf(y[j] | alpha[i[j]] + beta[i[j]] .* (x[j]-1970), sigma[i[j]]);
+   y_rep[j] = normal_rng(alpha[i[j]] + beta[i[j]] .* (x[j]-1970), sigma[i[j]]);
+ }
+}
+```
 \subsubsection{Convergence Statistics}
 
-As seen from the values below that the model has converged as Rhat values are below 1.01.
+Model convergences means that the sampling chains have merged so that the samples start represent the sampled distribution. The  R-hat  values tells us how well the model has convergenced with respect to a parameter. It generally should be 0.9 and 1.1. It can be seen from Figure #, the  R-hat  values are all very close to 1 and therefore it can be said that the separate model has converged.
 
 \begin{figure}[h]
-\centerline{\includegraphics[width=300pt]{../img/separate_model_print.png}}
-  \caption{Separate model}
-  \label{Figure 3}
+\centerline{\includegraphics[width=400pt]{../img/separate_model_print.png}}
+  \caption{Convergence Statistics for Separate Model}
+  \label{Figure}
 \end{figure}
 
 \subsubsection{Loo}
 
-As seen from the values and plot below that the k values are all less than 0.5, hence a reliable model.
+It can be seen from the values and plot below that almost all k values are less than 0.5, and very few are above 0.5, so these values are biased. Although it is still a reliable model. Further hierarchical model is also calculated for comparison.
 
 ```{r echo=FALSE}
 print(loo_separate_data)
@@ -509,6 +528,7 @@ plot(loo_separate_data)
 
 
 \subsubsection{Plots}
+
 ```{r echo=FALSE}
 mu = matrix(data = NA, nrow = 49, ncol = 4000)
 
@@ -540,30 +560,58 @@ for(i in seq(1:number_of_cities)){
 }
 ```
 
-\subsubsection{Analysis}
-
-
-
-
-
 \subsection{Hierarchical Model}
+
 \subsubsection{Stan Code}
 
+```
+data {
+  int N;
+  vector[N] y;
+  vector[N] x;
+  int k;
+  int i[N];
+}
 
+parameters {
+  vector[k] beta;
+  vector[k] alpha;
+  real <lower=0> sigma;
+  real <lower=0> sigma0;
+  real beta0;
+}
+
+model {
+  beta0 ~ normal(0,10);
+  sigma0 ~ normal(0, 10);
+  beta ~ normal(beta0, sigma0);
+  y ~ normal(alpha[i] + beta[i] .* (x-1970), sigma);
+}
+
+generated quantities{
+  vector[N] log_lik;
+  vector[N] y_rep;
+ 
+ for (j in 1:N) {
+   log_lik[j] = normal_lpdf(y[j] | alpha[i[j]] + beta[i[j]] .* (x[j]-1970), sigma);
+   y_rep[j] = normal_rng(alpha[i[j]] + beta[i[j]] .* (x[j]-1970), sigma);
+ }
+}
+```
 
 \subsubsection{Convergence Statistics}
 
-As seen from the values below that the model has converged as Rhat values are below 1.01.
+Model convergences means that the sampling chains have merged so that the samples start represent the sampled distribution. The  R-hat  values tells us how well the model has convergenced with respect to a parameter. It generally should be 0.9 and 1.1. It can be seen from Figure #, the  R-hat  values are all very close to 1 and therefore it can be said that the hierarchical model has converged.
 
 \begin{figure}[h]
-\centerline{\includegraphics[width=300pt]{../img/hierarchical_model_print.png}}
-  \caption{Hierarchical model}
+\centerline{\includegraphics[width=400pt]{../img/hierarchical_model_print.png}}
+  \caption{Convergence Statistics for Hierarchical model}
   \label{Figure 3}
 \end{figure}
 
 \subsubsection{Loo}
 
-As seen from the values and plot below that the k values are all less than 0.5, hence a reliable model.
+It can be seen from the values and plot below that almost all k values are less than 0.5, and almost no values are above 0.5. So it is a reliable model and performs marginally better than the Separate model computed above.
 
 ```{r echo=FALSE}
 print(loo_hierarchical_data)
@@ -604,11 +652,19 @@ for(i in seq(1:number_of_cities)){
 ```
 
 
-\subsubsection{Analysis}
+\section{Model Comparison}
 
+Hierarchical model better than Separate model for the following reasons:
 
+1. K-hat values in hierarchical model are very reliable
+2. ELPD value is more
+3. Effective number of parameters p_loo is less
 
+These results are separately printed above and below is the result obtained from the compare function in loo. 
 
+```{r echo=FALSE}
+compare(loo_hierarchical_data, loo_separate_data)
+```
 
 \subsection{Posterior Predictive checking}
 
@@ -649,30 +705,28 @@ for (i in seq(1:number_of_cities)){
 }
 ```
 
-
-\section{Model Comparison}
-
-Hierarchical better than Separate. 
-```{r echo=FALSE}
-compare(loo_hierarchical_data, loo_separate_data)
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
 \section{Conclusion}
-The threat of global warming and climate change is present in every place on the globe. It can be social, political or immediate threat from changing weather conditions. In Finland we are in lucky position that the changing conditions are not yet severe but the future changes are not yet known. The sea level rise in Finland is not a huge factor although in Gulf of Bothnia the sea level rises in some places 5 millimeters a year. However because of the Ice Age, the ground rises in that area almost 8 millimeters a year in that area. Also in southern Finland the Post-glacial rebound is about 4 to 5 millimeters a year and the in the Gulf of Finland the sea levels are actually decreasing.
+In Finland we are in lucky position that the changing conditions are not yet severe but the future changes are not yet known. The sea level rise in Finland is not a huge factor although in Gulf of Bothnia the sea level rises in some places 5 millimeters a year. However because of the Ice Age, the ground rises in that area almost 8 millimeters a year in that area. Also in southern Finland the Post-glacial rebound is about 4 to 5 millimeters a year and in the Gulf of Finland the sea levels are actually decreasing.
 
-The fact that the sea level rise is not a factor in Finland does not of course mean that the climate change does not affect to Finland and we could ignore it. The fight against climate change should be a shared problem between the nations and none should or could ignore the future of our home.
+The fact that the sea level rise is not a huge factor in Finland does not, of course, mean that the climate change does not affect Finland and it cna be ignored.
+
+The summary of the results for various cities are shown in figure #. 
+
+\begin{figure}[h]
+\centerline{\includegraphics[width=200pt]{../img/model_values.png}}
+  \caption{Convergence Statistics for Hierarchical model}
+  \label{Figure 3}
+\end{figure}
+
+According to NASA, the average rise in water-level is 3.3 mm. Considering it, we can conclude Figure #.
+
+
+\begin{figure}[h]
+\centerline{\includegraphics[width=200pt]{../img/city_threat.png}}
+  \caption{Convergence Statistics for Hierarchical model}
+  \label{Figure 3}
+\end{figure}
+
 
 \section{Improvement to the Project}
 We settled into the linear regression quite early going into the project. We tried some polynomial fittings also but they started to over fit quite severely. To improve this project we could have maybe tried more to find better models to fit into our problem. However we are quite happy with the results we got out of the data.

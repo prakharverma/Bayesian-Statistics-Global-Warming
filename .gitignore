@@ -40,3 +40,7 @@ rsconnect/
 *.ipynb
 
 *.ipynb_checkpoints
+
+.idea/*
+
+.ipynb_checkpoints/

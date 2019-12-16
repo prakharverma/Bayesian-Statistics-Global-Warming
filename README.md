@@ -11,7 +11,7 @@ Venice is already facing major problems.
 
 Goal of the project is to examine how much the sea level rise affects the coastal cities in Finland. For purpose
 of the study, four cities from coastal Finland were selected and the data is from January 1970 to November
-2019 is used. Linear regression with Gaussian noise, ```Error∼N(0,σ<sup>2</sup>)```, is fitted on the data to check the
+2019 is used. Linear regression with Gaussian noise, Error∼N(0,σ<sup>2</sup>), is fitted on the data to check the
 threat on Finnish cities.
 
 ## Data

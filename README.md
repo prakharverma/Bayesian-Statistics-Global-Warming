@@ -1,5 +1,7 @@
 # Bayesian Statistics Global Warming
 
+<b>Motivation</b>: The project was done as the part of "Bayesian Data Analysis" course at Aalto University, Finland as the part of Master's Programme. 
+
 ## Introduction
 Today, one of the biggest threat to the society is global warming. Sea level rise is the immediate result of
 global warming as it melts the ice sheets and expands the water volume. Cities like Venice, New Orleans and

@@ -7,7 +7,7 @@ Osaka are expected to experience major problems with the rise in sea level in ne
 
 Venice is already facing major problems.
 
-<img src="img/venice.png" align="center" width="200"/>
+<img src="img/venice.png" align="center" width="350"/>
 
 Goal of the project is to examine how much the sea level rise affects the coastal cities in Finland. For purpose
 of the study, four cities from coastal Finland were selected and the data is from January 1970 to November
@@ -21,7 +21,7 @@ Finnish Meteorological Institute provides open data about the weather. The data 
 cities are selected in a way that they are evenly distributed around the coast line so that the study covers the
 overall situation in Finland. The selected cities are Kemi, Turku, Helsinki and Oulu.
 
-<img src="img/map.png" align="center" width="200"/>
+<img src="img/map.png" align="center" width="300"/>
 
 
 ### Format of the Data
@@ -29,7 +29,7 @@ overall situation in Finland. The selected cities are Kemi, Turku, Helsinki and 
 Data by Finnish Meteorological Institute is collected every hour for every day throughout the year, i.e. ```24 *
 30 * 365``` readings are available for each city per year.
 
-<img src="img/data_example.png" align="center" width="200"/>
+<img src="img/data_example.png" align="center" width="350"/>
 
 ### Data pre-processing
 

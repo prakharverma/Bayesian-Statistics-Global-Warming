@@ -58,4 +58,4 @@ a separate model.
 
 ## More details  
 
-More details about the project, experiments, and results can be found at the report file, <a href="Impact_of_Global_Warming_on_Finland.pdf">project report</a>
+More details about the project, experiments, and results can be found in the report file, <a href="Impact_of_Global_Warming_on_Finland.pdf">project report</a>
